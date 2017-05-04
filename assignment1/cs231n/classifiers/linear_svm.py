@@ -39,11 +39,11 @@ def svm_loss_naive(W, X, y, reg):
             if j == y[i]:
                 continue
             elif margin > 0:
-                dW[j] += X[i]
+                dW[:, j] += X[i]
                 indicator += 1
                 loss += margin
 
-        dW[y[i]] += -1 * indicator * X[i]
+        dW[:, y[i]] += -1 * indicator * X[i]
 
 
     # Right now the loss is a sum over all training examples, but we want it
@@ -84,10 +84,10 @@ def svm_loss_vectorized(W, X, y, reg):
     num_classes = W.shape[1]
     num_train = X.shape[0]
     scores = np.dot(X, W)  # f(x; W), s_j, dimensions: (N, C)
-    correct_scores = scores[y]  # s_i, dimensions: (N, 1)
-    L = scores - correct_scores + 1  # broadcasting (N, C)
+    correct_scores = scores[np.arange(num_train), y]  # s_i, dimensions: (N, 1)
+    L = scores - np.reshape(correct_scores, (num_train, 1)) + 1  # broadcasting (N, C)
     L[L < 0] = 0  # max(0, -)
-    L[y] = 0 # Ignore floatting errors
+    L[np.arange(num_train), y] = 0 # Ignore floating errors
     loss = np.sum(L) / num_train
 
     loss += reg * np.sum(W ** 2)
@@ -105,11 +105,9 @@ def svm_loss_vectorized(W, X, y, reg):
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
     #############################################################################
-    L[L < 0] = 0
     L[L > 0] = 1
-    L[np.arrange(num_train), y] = 0
     I = np.sum(L, axis=1)
-    L[np.arrange(num_train), y] = -1 * I
+    L[np.arange(num_train), y] = -1 * I
 
     dW = np.dot(X.T, L)
     dW /= num_train
