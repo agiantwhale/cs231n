@@ -26,16 +26,25 @@ def svm_loss_naive(W, X, y, reg):
     # compute the loss and the gradient
     num_classes = W.shape[1]
     num_train = X.shape[0]
+    num_dimensions = X.shape[1]
     loss = 0.0
     for i in xrange(num_train):
-        scores = X[i].dot(W)
-        correct_class_score = scores[y[i]]
+        scores = X[i].dot(W) # (1, D) * (D, C) = (1, C)
+        correct_class_score = scores[y[i]] # (1, 1)
+        indicator = 0
+
         for j in xrange(num_classes):
+            margin = scores[j] - correct_class_score + 1  # note delta = 1
+
             if j == y[i]:
                 continue
-            margin = scores[j] - correct_class_score + 1  # note delta = 1
-            if margin > 0:
+            elif margin > 0:
+                dW[j] += X[i]
+                indicator += 1
                 loss += margin
+
+        dW[y[i]] += -1 * indicator * X[i]
+
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -52,6 +61,7 @@ def svm_loss_naive(W, X, y, reg):
     # loss is being computed. As a result you may need to modify some of the    #
     # code above to compute the gradient.                                       #
     #############################################################################
+    dW /= num_train
 
 
     return loss, dW
@@ -71,14 +81,16 @@ def svm_loss_vectorized(W, X, y, reg):
     # Implement a vectorized version of the structured SVM loss, storing the    #
     # result in loss.                                                           #
     #############################################################################
+    num_classes = W.shape[1]
     num_train = X.shape[0]
     scores = np.dot(X, W)  # f(x; W), s_j, dimensions: (N, C)
     correct_scores = scores[y]  # s_i, dimensions: (N, 1)
-    normalized = scores - correct_scores + 1  # broadcasting
-    normalized[normalized < 0] = 0  # max(0, -)
-    loss = np.sum(normalized) / num_train
+    L = scores - correct_scores + 1  # broadcasting (N, C)
+    L[L < 0] = 0  # max(0, -)
+    L[y] = 0 # Ignore floatting errors
+    loss = np.sum(L) / num_train
 
-    loss += np.sum(W ** 2) * reg
+    loss += reg * np.sum(W ** 2)
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -93,7 +105,14 @@ def svm_loss_vectorized(W, X, y, reg):
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
     #############################################################################
-    pass
+    L[L < 0] = 0
+    L[L > 0] = 1
+    L[np.arrange(num_train), y] = 0
+    I = np.sum(L, axis=1)
+    L[np.arrange(num_train), y] = -1 * I
+
+    dW = np.dot(X.T, L)
+    dW /= num_train
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
