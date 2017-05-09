@@ -43,6 +43,7 @@ def softmax_loss_naive(W, X, y, reg):
             dW[:, j] += probs[j] * X[i]
             if j == y[i]:
                 dW[:, j] += - X[i]
+            dW[:, j] += 2 * reg * W[:, j]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -85,6 +86,7 @@ def softmax_loss_vectorized(W, X, y, reg):
 
     loss /= num_train
     dW /= num_train
+    dW += 2 * reg * W
 
     loss += reg * np.sum(W ** 2)
     #############################################################################
