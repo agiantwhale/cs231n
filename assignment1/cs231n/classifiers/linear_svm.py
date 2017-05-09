@@ -91,7 +91,7 @@ def svm_loss_vectorized(W, X, y, reg):
     L[np.arange(num_train), y] = 0 # Ignore floating errors
     loss = np.sum(L) / num_train
 
-    loss += reg * np.sum(W ** 2)
+    loss += reg * np.sum(W * W)
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
