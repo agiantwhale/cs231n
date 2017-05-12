@@ -300,7 +300,7 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        loss, dx = softmax_loss(H, y)
+        loss, dx = softmax_loss(O, y)
 
         for L in range(self.num_layers):
             L += 1
