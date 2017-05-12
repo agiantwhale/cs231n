@@ -180,20 +180,26 @@ class FullyConnectedNet(object):
         ############################################################################
         for L in range(self.num_layers):
             L += 1
+            
+            from_dims = None
+            to_dims = None
 
             if L == 1:
-                self.params['W%d' % L] = weight_scale * np.random.randn(input_dim, hidden_dims[0])
-                self.params['b%d' % L] = np.zeros(hidden_dims[0])
+                from_dims = input_dim
+                to_dims = hidden_dims[0]
             elif L == self.num_layers:
-                self.params['W%d' % L] = weight_scale * np.random.randn(hidden_dims[L - 2], num_classes)
-                self.params['b%d' % L] = np.zeros(num_classes)
+                from_dims = hidden_dims[L - 2]
+                to_dims = num_classes
             else:
-                self.params['W%d' % L] = weight_scale * np.random.randn(hidden_dims[L - 2], hidden_dims[L - 1])
-                self.params['b%d' % L] = np.zeros(hidden_dims[L - 1])
+                from_dims = hidden_dims[L - 2]
+                to_dims = hidden_dims[L - 1]
+                
+            self.params['W%d' % L] = weight_scale * np.random.randn(from_dims, to_dims)
+            self.params['b%d' % L] = np.zeros(to_dims)
 
             if self.use_batchnorm:
-                self.params['gamma%d' % L] = 1
-                self.params['beta%d' % L] = 0
+                self.params['gamma%d' % L] = np.ones(to_dims)
+                self.params['beta%d' % L] = np.ones(to_dims)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -263,7 +269,7 @@ class FullyConnectedNet(object):
             caches.append(cache)
 
             if self.use_batchnorm:
-                H, cache = batchnorm_forward(H, self.params['gamma%d' % L], self.params['beta%d' % L], self.bn_params[L])
+                H, cache = batchnorm_forward(H, self.params['gamma%d' % L], self.params['beta%d' % L], self.bn_params[L-1])
                 caches.append(cache)
 
             H, cache = relu_forward(H)
