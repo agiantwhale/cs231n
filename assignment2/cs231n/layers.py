@@ -495,7 +495,39 @@ def conv_forward_naive(x, w, b, conv_param):
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
-    pass
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    
+    # print('Input C: %d' % C)
+    # print('Input H: %d' % H)
+    # print('Input W: %d' % W)
+    # 
+    # print('Weight C: %d' % C)
+    # print('Weight H: %d' % HH)
+    # print('Weight W: %d' % WW)
+    
+    stride = conv_param.get('stride', 1)
+    pad = conv_param.get('pad', 0)
+    
+    _H = int(1 + (H + 2 * pad - HH) / stride)
+    _W = int(1 + (W + 2 * pad - WW) / stride)
+    
+    out = np.zeros((N, F, _H, _W))
+    
+    for iN in range(N):
+        data = np.pad(x[iN], pad_width=((0,0), (pad,pad), (pad,pad)), mode='constant')
+        pC, pH, pW = data.shape
+        
+        # print('Padded C: %d' % pC)
+        # print('Padded H: %d' % pH)
+        # print('Padded W: %d' % pW)
+        
+        for iH in range(_H):
+            for iW in range(_W):
+                data_sel = data[:, iH*stride:iH*stride+HH, iW*stride:iW*stride+WW]
+                
+                for iF in range(F):
+                    out[iN, iF, iH, iW] = np.sum(w[iF] * data_sel) + b[iF]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
