@@ -515,8 +515,8 @@ def conv_forward_naive(x, w, b, conv_param):
     out = np.zeros((N, F, _H, _W))
     
     for iN in range(N):
-        data = np.pad(x[iN], pad_width=((0,0), (pad,pad), (pad,pad)), mode='constant')
-        pC, pH, pW = data.shape
+        padded_x = np.pad(x[iN], pad_width=((0,0), (pad,pad), (pad,pad)), mode='constant')
+        pC, pH, pW = padded_x.shape
         
         # print('Padded C: %d' % pC)
         # print('Padded H: %d' % pH)
@@ -524,10 +524,10 @@ def conv_forward_naive(x, w, b, conv_param):
         
         for iH in range(_H):
             for iW in range(_W):
-                data_sel = data[:, iH*stride:iH*stride+HH, iW*stride:iW*stride+WW]
+                conv_x = padded_x[:, iH*stride:iH*stride+HH, iW*stride:iW*stride+WW]
                 
                 for iF in range(F):
-                    out[iN, iF, iH, iW] = np.sum(w[iF] * data_sel) + b[iF]
+                    out[iN, iF, iH, iW] = np.sum(w[iF] * conv_x) + b[iF]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -552,7 +552,35 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    pass
+    x, w, b, conv_param = cache
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+    
+    stride = conv_param.get('stride', 1)
+    pad = conv_param.get('pad', 0)
+    
+    _H = int(1 + (H + 2 * pad - HH) / stride)
+    _W = int(1 + (W + 2 * pad - WW) / stride)
+    
+    dx = np.zeros_like(x)
+    dw = np.zeros_like(w)
+    db = np.zeros_like(b)
+    
+    for iN in range(N):
+        padded_dx = np.pad(dx[iN], pad_width=((0,0), (pad,pad), (pad,pad)), mode='constant')
+        padded_x = np.pad(x[iN], pad_width=((0,0), (pad,pad), (pad,pad)), mode='constant')
+        pC, pH, pW = padded_x.shape
+        
+        for iH in range(_H):
+            for iW in range(_W):
+                conv_x = padded_x[:, iH*stride:iH*stride+HH, iW*stride:iW*stride+WW]
+                
+                for iF in range(F):
+                    padded_dx[:, iH*stride:iH*stride+HH, iW*stride:iW*stride+WW] += w[iF] * dout[iN, iF, iH, iW]
+                    dw[iF] += conv_x * dout[iN, iF, iH, iW]
+                    db[iF] += dout[iN, iF, iH, iW]
+                    
+        dx[iN] = padded_dx[:, pad:-pad, pad:-pad]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
